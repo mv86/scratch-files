@@ -15,7 +15,7 @@ class Game(ABC):
         self.valid_piece_names = None
         self.valid_piece_colors = None
         self._setup_game(restore_positions)
-        self.current_player = Color.WHITE
+        self.playing_piece = None
         self.winner = None
 
     @abstractmethod
@@ -40,9 +40,9 @@ class Game(ABC):
     def save_game(self):
         pass
 
-    def opponent_color_(self):
+    def opponent_color(self):
         """Return color of passed piece opponent."""
-        return Color.WHITE if self.current_player == Color.BLACK else Color.BLACK
+        return Color.WHITE if self.playing_piece == Color.BLACK else Color.BLACK
 
     def add(self, piece, coords):
         """Add piece on board at given coordinates and update piece coordinates. Increment pieces.
@@ -97,25 +97,46 @@ class Game(ABC):
         if not piece:
             raise PieceNotFoundError(from_coords, 'No piece found at from coordinates')
 
+    def coords_between(self, from_coords, to_coords):
+        """Helper function. Return generator of all coords between from_coords and to_coords."""
+        if from_coords.x > to_coords.x:
+            x_coords = reversed(list(range(to_coords.x + 1, from_coords.x)))
+        elif from_coords.x == to_coords.x:
+            list_length = abs(from_coords.y - to_coords.y)
+            x_coords = list_length * [from_coords.x]
+        else:
+            x_coords = list(range(from_coords.x + 1, to_coords.x))
 
-def move_direction(from_coords, to_coords):
-    """Calculate direction from from_coordinates to coordinates. Return Direction enum.
+        if from_coords.y > to_coords.y:
+            y_coords = reversed(list(range(to_coords.y + 1, from_coords.y)))
+        elif from_coords.y == to_coords.y:
+            list_length = abs(from_coords.x - to_coords.x)
+            y_coords = list_length * [from_coords.y]
+        else:
+            y_coords = list(range(from_coords.y + 1, to_coords.y))
 
-    Args:
-            from_coords: Namedtuple with coordinates x & y. E.g. Coords(x=0, y=1).
-            to_coords:   Namedtuple with coordinates x & y. E.g. Coords(x=0, y=1).
+        return (Coords(x, y) for x, y in zip(x_coords, y_coords))
 
-    Returns:
-            Direction enum type.
-    """
-    if abs(from_coords.x - to_coords.x) == abs(from_coords.y - to_coords.y):
-        return Direction.DIAGONAL
-    elif from_coords.x != to_coords.x and from_coords.y == to_coords.y:
-        return Direction.HORIZONTAL
-    elif from_coords.y != to_coords.y and from_coords.x == to_coords.x:
-        return Direction.VERTICAL
-    else:
-        return Direction.NON_LINEAR
+    @staticmethod
+    def move_direction(from_coords, to_coords):
+        """Calculate direction from from_coordinates to coordinates. Return Direction enum.
+
+        Args:
+                from_coords: Namedtuple with coordinates x & y. E.g. Coords(x=0, y=1).
+                to_coords:   Namedtuple with coordinates x & y. E.g. Coords(x=0, y=1).
+
+        Returns:
+                Direction enum type.
+        """
+        if abs(from_coords.x - to_coords.x) == abs(from_coords.y - to_coords.y):
+            return Direction.DIAGONAL
+        elif from_coords.x != to_coords.x and from_coords.y == to_coords.y:
+            return Direction.HORIZONTAL
+        elif from_coords.y != to_coords.y and from_coords.x == to_coords.x:
+            return Direction.VERTICAL
+        else:
+            return Direction.NON_LINEAR
+
 
 def adjacent_squares(from_coords, to_coords):
     """Check if to_coordinates are adjacent to from_coordinates. Return bool."""
